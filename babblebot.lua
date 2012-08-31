@@ -53,9 +53,6 @@ function readIRC(s)
                 updateCommits(s, false)
                 lastSVN = os.time()
             end
-            if idle and type(idle) == "function" then
-                idle(s)
-            end
             lastUpdate = os.time()
         end 
     end

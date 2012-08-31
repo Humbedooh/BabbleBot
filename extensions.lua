@@ -446,12 +446,3 @@ function _G.handleMsg(s, line)
     end
 end
 
-_G._serial = _serial or 0
-function _G.idle(s)
-    serial = 4
-    if serial ~= _serial then
-        s:send("PRIVMSG #commentstest :New functions loaded\r\n\r\n")
-        _serial = serial
-        print("New commands received, updating")
-    end
-end
