@@ -9,8 +9,9 @@ function twitterStatus(entry, bl)
         for item in data:gmatch("<item>(.-)</item>") do
             local link = item:match("<link>(.-)</link>") or "??"
             local desc = item:match("<description>(.-)</description>") or "??"
+            local author = item:match("<author>.-%((.-)%)</author>") or "??"
             desc = desc:gsub("&lt;.-&gt;", "")
-            table.insert(tweets, ("Tweet: %s [ %s ]"):format(desc, link) )
+            table.insert(tweets, ("Tweet: <%s> %s [ %s ]"):format(author, desc, link) )
         end
         local i = 0
         for k, tweet in pairs(tweets) do
@@ -80,8 +81,8 @@ function getTweets(s, sender, channel, tag)
         entry = _G.channels[channel]
     end
     if entry then
-        say(s, channel or sender, "Last tweets: ")
-        local backlog = twitterStatus(entry, 3)
+        say(s, channel or sender, "Latest tweets: ")
+        local backlog = twitterStatus(entry, 2)
         for k, tweet in pairs(backlog) do
             say(s, channel or sender, tweet)
             os.execute("sleep 1")
