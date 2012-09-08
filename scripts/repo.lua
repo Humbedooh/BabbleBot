@@ -205,7 +205,119 @@ function lastGit(s, sender, channel, cmd)
     end
 end
 
+function lastSvn(s, sender, channel, cmd)
+    local chan, span = cmd:match("(%S+)%s*(%d*)$")
+    chan = chan or channel
+    span = tonumber(span or "5")
+    local entry = {}
+    for k, v in pairs(_G.channels) do
+        if v.channel == chan then entry = v; break; end
+    end
+    if entry.svn then
+        say(s, channel or sender, ("Showing last Subversion commit:"):format(span or 1))
+        local backLog = checkSvn(entry, 1)
+        for k, v in pairs(backLog) do
+            say(s, channel or sender, v)
+            os.execute("sleep 1")
+        end
+    else
+        say(s, channel or sender, "No Subversion repository found for channel " .. (channel or "nil"))
+    end
+end
+
+function subscribe(s, sender, channel, cmd)
+    if hasKarma(sender) then
+        local what, url = cmd:match("^(%S+) (%S+)")
+        local subbed = false
+        local entry = nil
+        for k, v in pairs(_G.channels) do
+            if v.channel == channel then entry = v; break; end
+        end
+        if entry and url then
+            if what == "git" then
+                entry.git = entry.git or {}
+                table.insert(entry.git, url)
+                say(s, channel or sender, ("Added %s to the list of subscribed Git repositories for %s"):format(url, channel))
+            end
+            if what == "svn" then
+                entry.svn = entry.svn or {}
+                table.insert(entry.svn, url)
+                say(s, channel or sender, ("Added %s to the list of subscribed Subversion repositories for %s"):format(url, channel))
+            end
+            if what == "jira" then
+                entry.jira = entry.jira or {}
+                table.insert(entry.jira, url)
+                checkJIRA(entry, true)
+                say(s, channel or sender, ("Added %s to the list of subscribed JIRA instances for %s"):format(url, channel))
+            end
+            if what ~= "git" and what ~= "svn" and what ~= "jira" then
+                say(s, channel or sender, "I do not know that type of repo. I know: git + svn")
+            end
+        else
+            say(s, channel or sender, "I am currently not in this channel...somehow :(")
+        end
+    end
+end
+
+
+function unsubscribe(s, sender, channel, cmd)
+    if hasKarma(sender) then
+        local what, url = cmd:match("^(%S+) (%S+)")
+        local subbed = false
+        local entry = nil
+        for k, v in pairs(_G.channels) do
+            if v.channel == channel then entry = v; break; end
+        end
+        if entry and url then
+            if what == "git" then
+                entry.git = entry.git or {}
+                for k, v in pairs(entry.git) do
+                    if v == url then entry.git[k] = nil break end
+                end
+                say(s, channel or sender, ("Removed %s from the list of subscribed Git repositories for %s"):format(url, channel))
+            end
+            if what == "svn" then
+                entry.svn = entry.svn or {}
+                for k, v in pairs(entry.svn) do
+                    if v == url or url == "*" then entry.svn[k] = nil end
+                end
+                say(s, channel or sender, ("Removed %s from the list of subscribed Subversion repositories for %s"):format(url, channel))
+            end
+            if what == "jira" then
+                entry.jira = entry.jira or {}
+                for k, v in pairs(entry.jira) do
+                    if v == url or url == "*" then entry.jira[k] = nil end
+                end
+                say(s, channel or sender, ("Removed %s from the list of subscribed JIRA instances for %s"):format(url, channel))
+            end
+        else
+            say(s, channel or sender, "I am currently not in this channel...somehow :(")
+        end
+    end
+end
+
+function listsubs(s, sender, channel, cmd)
+    local who = cmd:match("(.+)") or "nil"
+    local entry = {}
+    for k, v in pairs(_G.channels) do
+        if k == who then entry = v; break; end
+    end
+    say(s, channel or sender, "Subscribed repositories for " .. entry.channel .. ":")
+    if entry.svn then
+        local repos = table.concat(entry.svn, ", ")
+        say(s, channel or sender, "SVN Repositories: " .. repos)
+    end
+    if entry.git then
+        local repos = table.concat(entry.git, ", ")
+        say(s, channel or sender, "Git Repositories: " .. repos)
+    end
+end
+
 registerCallback("updateCommits", updateCommits, 90, true)
 registerCommand("lastgit", lastGit)
+registerCommand("lastsvn", lastSvn)
+registerCommand("subscribe", subscribe)
+registerCommand("unsubscribe", unsubscribe)
+registerCommand("subs", listsubs)
 
 

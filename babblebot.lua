@@ -13,7 +13,8 @@ function say(s, recipient, msg)
     msg = msg:gsub("<u>", string.char(0x1f))
     msg = msg:gsub("</b>", string.char(0x0f))
     msg = msg:gsub("</u>", string.char(0x0f))
-    msg = msg:gsub("<c([0-9,]+)>", function(a) return string.char(0x03)..(a or "") end)
+    msg = msg:gsub("<c([0-9,]*)>", function(a) return string.char(0x03)..(a or "") end)
+    msg = msg:gsub("</c>", string.char(0x03) .. " ")
     if s then s:send( ("PRIVMSG %s :%s\r\n"):format(recipient, msg) ) end
 end
 
@@ -72,10 +73,14 @@ function _G.handleMsg(s, line)
         local rec = nil
         if channel then rec, cmd = line:match("PRIVMSG #[^:]+:([^:,]+)[,:] (.+)") end
         if not channel then cmd = line:match("PRIVMSG %[^:]+:(.+)") end
+        print(("chan=%s, rec=%s, cmd=%s"):format(channel or "??", rec or "??", cmd or "??"))
         if sender and cmd and rec == config.nick then
-            local command, params = cmd:match("^(%S+)%s*(%S*)$") or ""
+            local command = cmd:match("^(%S+)") or ""
+            local params = cmd:sub(command:len()+2)
+            command = command or ""
             for k, v in pairs(chatCommands) do
                 if command:lower() == v.arg then
+                    print("dispatching to function " .. k)
                     if v.func and type(v.func) == "function" then
                         v.func(s, sender, channel, params)
                     end
@@ -92,8 +97,10 @@ function readIRC(s)
         if receive then
             if string.find(receive, "PING :") then
                 s:send("PONG :" .. string.sub(receive, (string.find(receive, "PING :") + 6)) .. "\r\n\r\n")
+                print("ping? pong!")
             else
                 if string.find(receive, "PRIVMSG") then
+                    print(receive)
                     local good, err = pcall(function() handleMsg(s, receive) end)
                     if err then 
                         print("ERR: ", err)
