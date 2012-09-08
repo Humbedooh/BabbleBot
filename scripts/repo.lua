@@ -143,7 +143,7 @@ function checkGit(entry, getLast)
                         repoData.lastCommit = commit.id
                     end
                     if commit.author and commit.subject and commit.email and commit.id > repoData.lastCommit then
-                        if commit.subject:len() > config.rssmessagesize then commit.subject = commit.subject:sub(1,config.rssmessagesize) .. "..." end
+                        if commit.subject:len() > config.maxmessagesize then commit.subject = commit.subject:sub(1,config.maxmessagesize) .. "..." end
                         local mod = #commit.files .. " files"
                         if #commit.files == 1 then mod = commit.files[1] end
                         local msg1 =  ("<c3><%s></c> <b>%s * %s:</b> (%s)[ <u>http://apaste.info/ats=%s</u> ]"):format(commit.email, commit.ref, commit.hash, mod, commit.hash)
@@ -185,11 +185,27 @@ function updateCommits(s, ignore)
     end
 end
 
-function subscribe(s, sender, channel, params)
-    say(s, channel or sender, "Stuffs...")
+function lastGit(s, sender, channel, cmd)
+    local chan, span = cmd:match("(%S+)%s*(%d*)$")
+    chan = chan or channel
+    span = tonumber(span or "5")
+    local entry = {}
+    for k, v in pairs(_G.channels) do
+        if v.channel == chan then entry = v; break; end
+    end
+    if entry.git then
+        say(s, channel or sender, ("Showing Git commits within %s seconds of the last commit:"):format(span or 1))
+        local backLog = checkGit(entry, span or 500)
+        for k, v in pairs(backLog) do
+            say(s, channel or sender, v)
+            os.execute("sleep 1")
+        end
+    else
+        say(s, channel or sender, "No Git repository found for channel " .. (channel or "nil"))
+    end
 end
 
 registerCallback("updateCommits", updateCommits, 90, true)
-registerCommand("subscribe", subscribe)
+registerCommand("lastgit", lastGit)
 
 
