@@ -1,6 +1,7 @@
 local socket = require "socket" -- Lua Socket
 local lfs    = require "lfs" --luafilesystem
 require "extensions"
+require "config"
 
 chatCommands = {}
 idleFunctions = {}
@@ -13,7 +14,7 @@ function say(s, recipient, msg)
     msg = msg:gsub("</b>", string.char(0x0f))
     msg = msg:gsub("</u>", string.char(0x0f))
     msg = msg:gsub("<c([0-9,]+)>", function(a) return string.char(0x03)..(a or "") end)
-    s:send( ("PRIVMSG %s :%s\r\n"):format(recipient, msg) )
+    if s then s:send( ("PRIVMSG %s :%s\r\n"):format(recipient, msg) ) end
 end
 
 function registerCommand(cmd, func)
@@ -30,15 +31,16 @@ function updateScripts(s)
             local path = "./scripts/" .. filename
             local stat = lfs.attributes(path)
             scripts[path] = scripts[path] or {size=0, modified=0}
-            if stat and (stat.modified > scripts[path].modified or stat.size ~= scripts[path].size) then
+            if stat and (stat.modification > scripts[path].modified or stat.size ~= scripts[path].size) then
+                scripts[path] = {modified=stat.modification, size=stat.size}
                 print("(re)loading "..path)
                 say(s, config.owner, ("Script '%s' is modified/new, (re)loading..."):format(filename))
                 local good, err = pcall(function() dofile(path) end)
                 if err then
-                    say(s, config.owner, "[bold]Error:[end] " .. err)
+                    say(s, config.owner, "<b>Error:</b> " .. err)
                 else
                     dofile(path)
-                    say(s, config.owner, "Load successful." .. err)
+                    say(s, config.owner, "Load successful.")
                 end
             end
         end
@@ -49,12 +51,12 @@ function runCallbacks(s, startingUp)
     local now = os.time()
     for k, v in pairs(callbacks) do
         v.lastCall = v.lastCall or now
-        if (v.lastCall + v.timeout) >= now or (startingUp and v.atstart) then
-            print("Running callback " .. k)
+        if (v.lastCall + v.timeout) <= now or (startingUp and v.atstart) then
+            print(("Running callback %s (%u + %u <= %u)"):format(k, v.lastCall, v.timeout, now))
             if type(v.func) == "function" then
                 local good, err = pcall(function() v.func(s) end)
                 if err then
-                    say(s, config.owner, "[bold]Error in callback '"..k.."':[end] " .. err)
+                    say(s, config.owner, "<b>Error in callback '"..k.."':</b> " .. err)
                 end
             end
             v.lastCall = now
@@ -65,11 +67,12 @@ end
 function _G.handleMsg(s, line)
     if line then
         local sender = line:match("^:([^%!]+)")
-        local channel = line:match("PRIVMSG (%S+) :") or nil
+        local channel = line:match("PRIVMSG (#%S+) :") or nil
         local cmd = nil
-        if channel then cmd = line:match("PRIVMSG #[^:]+:"..config.nick.."[,:] (.+)") end
-        if not channel then cmd = line:match("PRIVMSG :(.+)") end
-        if sender and cmd then
+        local rec = nil
+        if channel then rec, cmd = line:match("PRIVMSG #[^:]+:([^:,]+)[,:] (.+)") end
+        if not channel then cmd = line:match("PRIVMSG %[^:]+:(.+)") end
+        if sender and cmd and rec == config.nick then
             local command, params = cmd:match("^(%S+)%s*(%S*)$") or ""
             for k, v in pairs(chatCommands) do
                 if command:lower() == v.arg then
@@ -96,7 +99,7 @@ function readIRC(s)
                         print("ERR: ", err)
                         local sender = receive:match("^:([^%!]+)")
                         local channel = receive:match("PRIVMSG (%S+) :")
-                        say(s, channel or sender, "[bold]Error:[end] " .. err)
+                        say(s, channel or sender, "<b>Error:</b> " .. err)
                     end
                 end
             end
@@ -124,7 +127,7 @@ function connectToIRC()
     s:send("USER " .. config.username .. " " .. " " .. config.nick .. " " .. config.nick .. " " .. ":" .. config.realname .. "\r\n\r\n")
     s:send("NICK " .. config.nick .. "\r\n\r\n")
     if config.password then 
-        s:send("PRIVMSG nickserv :identify " .. config.password .. ""\r\n\r\n");
+        s:send("PRIVMSG nickserv :identify " .. config.password .. "\r\n\r\n");
     end
     print("Joining channels\n");
     for k, entry in pairs(channels) do
@@ -135,7 +138,13 @@ function connectToIRC()
     return s
 end
 
+function joinChannel(s, sender, channel, params)
+    say(s, channel or sender, "Joining " .. params)
+    s:send("JOIN " .. params .. "\r\n\r\n");
+    print("Joined " .. params .. " ");
+end
 
+registerCommand("join", joinChannel)
 
 -- Start the program
 _G.lastUpdate = os.time()

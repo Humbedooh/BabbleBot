@@ -1,7 +1,7 @@
 _G.config = {
     server = "irc.freenode.net",
     nick = "BabbleBot",
-    password = "supersecretpassword",
+    password = "somepassword",
     owner = "Humbedooh",
     username = "babble",
     realname = "BabbleBot",
@@ -14,10 +14,10 @@ _G.karma = {"Humbedooh"}
 
 _G.channels = {
     test = {
-        channel = "#commentstest", 
-        svn = {"https://svn.apache.org/repos/asf/trafficserver/site/"},
+        channel = "#traffic-server", 
+        svn = {},
         git = {
-            "https://git-wip-us.apache.org/repos/asf/trafficserver.git",
+            "/var/git/trafficserver",
             },
         },
 }
