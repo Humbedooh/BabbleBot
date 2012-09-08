@@ -1,7 +1,8 @@
 _G.config = {
     server = "irc.freenode.net",
-    nick = "BabbleBot-2",
-    password = "somepassword",
+    nick = "BabbleBot",
+    password = "supersecretpassword",
+    owner = "Humbedooh",
     username = "babble",
     realname = "BabbleBot",
     maxmessagesize = 256,
