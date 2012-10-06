@@ -10,7 +10,7 @@ _G.config = {
     svnfolder = "/var/svn"
 }
 
-_G.karma = {"YourNicknameHere"}
+_G.karma = {"YourNickHere"}
 
 _G.channels = {
     test = {
