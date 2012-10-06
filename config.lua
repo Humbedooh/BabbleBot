@@ -10,14 +10,14 @@ _G.config = {
     svnfolder = "/var/svn"
 }
 
-_G.karma = {"Humbedooh"}
+_G.karma = {"YourNameHere"}
 
 _G.channels = {
     test = {
-        channel = "#traffic-server", 
+        channel = "#commits", 
         svn = {},
         git = {
-            "/var/git/trafficserver",
+            "/var/git/someproject",
             },
         },
 }
