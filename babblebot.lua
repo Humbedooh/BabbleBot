@@ -100,7 +100,7 @@ function readIRC(s)
                 print("ping? pong!")
             else
                 if string.find(receive, "PRIVMSG") then
-                    print(receive)
+                  --  print(receive)
                     local good, err = pcall(function() handleMsg(s, receive) end)
                     if err then 
                         print("ERR: ", err)
