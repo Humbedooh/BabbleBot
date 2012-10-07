@@ -125,7 +125,7 @@ function connectToIRC()
     print("Connecting to " .. config.server .. "\n")
     local s = socket.tcp()
     _G.s = s
-    local success, err = s:connect(socket.dns.toip(config.server), 6667)
+    local success, err = s:connect(socket.dns.toip(config.server), config.port)
     if not success then
         print("Failed to connect: ".. err .. "\n")
         return false
@@ -166,7 +166,7 @@ while true do
         print "Idling..."
         readIRC(s)
     else
-        print("Connection failed, retrying...")
+        print("Connection failed, retrying in 5 seconds...")
         os.execute("sleep 5")
     end
 end
