@@ -149,6 +149,7 @@ function joinChannel(s, sender, channel, params)
     say(s, channel or sender, "Joining " .. params)
     s:send("JOIN " .. params .. "\r\n\r\n");
     print("Joined " .. params .. " ");
+    os.execute("sleep 0.5") -- avoid flooding
 end
 
 registerCommand("join", joinChannel)
