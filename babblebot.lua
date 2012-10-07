@@ -72,7 +72,7 @@ function _G.handleMsg(s, line)
         local cmd = nil
         local rec = nil
         if channel then rec, cmd = line:match("PRIVMSG #[^:]+:([^:,]+)[,:] (.+)") end
-        if not channel then cmd = line:match("PRIVMSG %[^:]+:(.+)") end
+        if not channel then rec, cmd = line:match("PRIVMSG ([^ ]+) :(.+)") end
         print(("chan=%s, rec=%s, cmd=%s"):format(channel or "??", rec or "??", cmd or "??"))
         if sender and cmd and rec == config.nick then
             local command = cmd:match("^(%S+)") or ""
